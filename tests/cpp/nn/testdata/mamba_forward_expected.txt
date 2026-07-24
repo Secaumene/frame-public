@@ -1,0 +1,60 @@
+%0 = graph_input() : float32[1,2,4]@cpu:0
+%1 = graph_input() : float32[2,1,2]@cpu:0
+%2 = graph_input() : float32[2]@cpu:0
+%3 = graph_input() : float32[2,2]@cpu:0
+%4 = graph_input() : float32[4,2]@cpu:0
+%5 = graph_input() : float32[2,2]@cpu:0
+%6 = graph_input() : float32[4,2]@cpu:0
+%7 = graph_input() : float32[2,2]@cpu:0
+%8 = graph_input() : float32[4,2]@cpu:0
+%9 = graph_input() : float32[2,2]@cpu:0
+%10 = graph_input() : float32[4,2]@cpu:0
+%11 = graph_input() : float32[2,2]@cpu:0
+%12 = graph_input() : float32[4,2]@cpu:0
+%13 = graph_input() : float32[2,2]@cpu:0
+%14 = graph_input() : float32[4,2]@cpu:0
+%15 = graph_input() : float32[2,2]@cpu:0
+%16 = graph_input() : float32[4,2]@cpu:0
+%17 = conv1d(%0, %1, %2) {groups=2, padding=1, stride=1} : float32[1,2,5]@cpu:0
+%18 = slice(%17) {axis=2, start=0, stop=4} : float32[1,2,4]@cpu:0
+%19 = transpose(%18) {perm=[0, 2, 1]} : float32[1,4,2]@cpu:0
+%20 = reshape(%19) {target_shape=shape[4,2]} : float32[4,2]@cpu:0
+%21 = matmul(%20, %3) : float32[4,2]@cpu:0
+%22 = add(%21, %4) : float32[4,2]@cpu:0
+%23 = tanh(%22) : float32[4,2]@cpu:0
+%24 = reshape(%23) {target_shape=shape[1,4,2]} : float32[1,4,2]@cpu:0
+%25 = transpose(%24) {perm=[0, 2, 1]} : float32[1,2,4]@cpu:0
+%26 = matmul(%20, %5) : float32[4,2]@cpu:0
+%27 = add(%26, %6) : float32[4,2]@cpu:0
+%28 = sigmoid(%27) : float32[4,2]@cpu:0
+%29 = reshape(%28) {target_shape=shape[1,4,2]} : float32[1,4,2]@cpu:0
+%30 = transpose(%29) {perm=[0, 2, 1]} : float32[1,2,4]@cpu:0
+%31 = matmul(%20, %7) : float32[4,2]@cpu:0
+%32 = add(%31, %8) : float32[4,2]@cpu:0
+%33 = tanh(%32) : float32[4,2]@cpu:0
+%34 = reshape(%33) {target_shape=shape[1,4,2]} : float32[1,4,2]@cpu:0
+%35 = transpose(%34) {perm=[0, 2, 1]} : float32[1,2,4]@cpu:0
+%36 = matmul(%20, %9) : float32[4,2]@cpu:0
+%37 = add(%36, %10) : float32[4,2]@cpu:0
+%38 = tanh(%37) : float32[4,2]@cpu:0
+%39 = reshape(%38) {target_shape=shape[1,4,2]} : float32[1,4,2]@cpu:0
+%40 = transpose(%39) {perm=[0, 2, 1]} : float32[1,2,4]@cpu:0
+%41 = matmul(%20, %11) : float32[4,2]@cpu:0
+%42 = add(%41, %12) : float32[4,2]@cpu:0
+%43 = tanh(%42) : float32[4,2]@cpu:0
+%44 = reshape(%43) {target_shape=shape[1,4,2]} : float32[1,4,2]@cpu:0
+%45 = transpose(%44) {perm=[0, 2, 1]} : float32[1,2,4]@cpu:0
+%46 = matmul(%20, %13) : float32[4,2]@cpu:0
+%47 = add(%46, %14) : float32[4,2]@cpu:0
+%48 = sigmoid(%47) : float32[4,2]@cpu:0
+%49 = reshape(%48) {target_shape=shape[1,4,2]} : float32[1,4,2]@cpu:0
+%50 = transpose(%49) {perm=[0, 2, 1]} : float32[1,2,4]@cpu:0
+%51 = selective_scan(%25, %30, %35, %40, %45) : float32[1,2,4]@cpu:0
+%52 = mul(%51, %50) : float32[1,2,4]@cpu:0
+%53 = transpose(%52) {perm=[0, 2, 1]} : float32[1,4,2]@cpu:0
+%54 = reshape(%53) {target_shape=shape[4,2]} : float32[4,2]@cpu:0
+%55 = matmul(%54, %15) : float32[4,2]@cpu:0
+%56 = add(%55, %16) : float32[4,2]@cpu:0
+%57 = reshape(%56) {target_shape=shape[1,4,2]} : float32[1,4,2]@cpu:0
+%58 = transpose(%57) {perm=[0, 2, 1]} : float32[1,2,4]@cpu:0
+graph_output(%58)

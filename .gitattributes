@@ -1,0 +1,12 @@
+# 全仓统一 LF 换行;源码与文档一律按 UTF-8 文本处理(注释为中文,编码事故零容忍)
+* text=auto eol=lf
+*.h text eol=lf
+*.cpp text eol=lf
+*.cu text eol=lf
+*.py text eol=lf
+*.md text eol=lf
+*.cmake text eol=lf
+CMakeLists.txt text eol=lf
+*.json text eol=lf
+*.toml text eol=lf
+*.yml text eol=lf

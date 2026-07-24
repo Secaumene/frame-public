@@ -1,0 +1,6 @@
+%0 = constant() {dtype=dtype(float32), shape=shape[1], value=[2.0]} : float32[1]@cpu:0
+%1 = constant() {dtype=dtype(float32), shape=shape[1], value=[3.0]} : float32[1]@cpu:0
+%2 = constant() {dtype=dtype(float32), shape=shape[1], value=[4.0]} : float32[1]@cpu:0
+%3 = add(%0, %1) : float32[1]@cpu:0
+%4 = add(%3, %2) : float32[1]@cpu:0
+graph_output(%4)

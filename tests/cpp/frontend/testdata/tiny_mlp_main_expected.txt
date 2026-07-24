@@ -1,0 +1,322 @@
+// ============================================================================
+// tiny_mlp:由 frame_dslc --emit 从 JSON DSL 生成的自包含训练/推理程序。
+// 请勿手工编辑;如需修改模型结构,请修改源 DSL 文件后重新运行 --emit。
+//
+// 语言纪律(铁律 #4):标识符/程序输出/错误消息英文;注释中文。
+// ============================================================================
+
+#include <algorithm>
+#include <cstdint>
+#include <iostream>
+#include <memory>
+#include <random>
+#include <string_view>
+#include <vector>
+
+#include <frame/compiler/autograd.h>
+#include <frame/frame.h>
+#include <frame/ops/graph_builder.h>
+
+namespace {
+
+// 打印失败 Status 到 stderr 并返回 false;调用方据此立即返回。
+bool CheckOk(const frame::Status& status, std::string_view what) {
+  if (status.is_ok()) return true;
+  std::cerr << what << " failed: " << status.message() << "\n";
+  return false;
+}
+
+// 构造 float32/cpu 的 TensorType。
+frame::ir::TensorType MakeFloat32TensorType(std::vector<int64_t> dims) {
+  frame::ir::TensorType type;
+  type.dtype = frame::DType::of<float>();
+  type.shape = frame::Shape(std::move(dims));
+  type.device = frame::cpu_device();
+  return type;
+}
+
+constexpr double kLearningRate = 0.050000000000000003;
+constexpr int32_t kNumSteps = 300;
+constexpr int32_t kLogEvery = 0;
+constexpr uint32_t kSeed = 20260713U;
+constexpr float kParamWeightLo = -0.300000012F;
+constexpr float kParamWeightHi = 0.300000012F;
+constexpr float kParamBiasLo = 0.0F;
+constexpr float kParamBiasHi = 0.5F;
+
+// 建训练前向图,图输入序 [data_input, 逐层 weight,bias..., target],
+// 单输出 = loss(与 frame::frontend::lower_to_graph 同一构图口径)。
+frame::Result<frame::ir::Graph> BuildTrainingGraph() {
+  using frame::ir::Graph;
+  using frame::ir::Node;
+  using frame::ir::Value;
+  using frame::ops::create_node_with_inferred_types;
+
+  Graph graph("tiny_mlp");
+  const frame::Result<Value*> data_input_result =
+      graph.add_graph_input(MakeFloat32TensorType({8, 4}));
+  if (!data_input_result.is_ok()) return data_input_result.status();
+  Value* data_input = data_input_result.value();
+
+  // Layer 0 ("layer0"): matmul + bias + relu
+  const frame::Result<Value*> layer0_weight_result = graph.add_graph_input(
+      MakeFloat32TensorType({4, 8}));
+  if (!layer0_weight_result.is_ok()) return layer0_weight_result.status();
+  Value* layer0_weight = layer0_weight_result.value();
+  const frame::Result<Node*> layer0_matmul_result =
+      create_node_with_inferred_types(graph, "matmul", {data_input, layer0_weight});
+  if (!layer0_matmul_result.is_ok()) return layer0_matmul_result.status();
+  Value* layer0_matmul_out = layer0_matmul_result.value()->output(0);
+  const frame::Result<Value*> layer0_bias_result = graph.add_graph_input(
+      MakeFloat32TensorType({8, 8}));
+  if (!layer0_bias_result.is_ok()) return layer0_bias_result.status();
+  Value* layer0_bias = layer0_bias_result.value();
+  const frame::Result<Node*> layer0_add_result =
+      create_node_with_inferred_types(graph, "add", {layer0_matmul_out, layer0_bias});
+  if (!layer0_add_result.is_ok()) return layer0_add_result.status();
+  Value* layer0_add_out = layer0_add_result.value()->output(0);
+  const frame::Result<Node*> layer0_relu_result =
+      create_node_with_inferred_types(graph, "relu", {layer0_add_out});
+  if (!layer0_relu_result.is_ok()) return layer0_relu_result.status();
+  Value* layer0_relu_out = layer0_relu_result.value()->output(0);
+  Value* layer0_output = layer0_relu_out;
+
+  // Layer 1 ("layer1"): matmul
+  const frame::Result<Value*> layer1_weight_result = graph.add_graph_input(
+      MakeFloat32TensorType({8, 1}));
+  if (!layer1_weight_result.is_ok()) return layer1_weight_result.status();
+  Value* layer1_weight = layer1_weight_result.value();
+  const frame::Result<Node*> layer1_matmul_result =
+      create_node_with_inferred_types(graph, "matmul", {layer0_output, layer1_weight});
+  if (!layer1_matmul_result.is_ok()) return layer1_matmul_result.status();
+  Value* layer1_matmul_out = layer1_matmul_result.value()->output(0);
+  Value* layer1_output = layer1_matmul_out;
+
+  const frame::Result<Value*> target_result = graph.add_graph_input(
+      MakeFloat32TensorType({8, 1}));
+  if (!target_result.is_ok()) return target_result.status();
+  Value* target = target_result.value();
+
+  const frame::Result<Node*> loss_result = create_node_with_inferred_types(
+      graph, "mse_loss", {layer1_output, target});
+  if (!loss_result.is_ok()) return loss_result.status();
+  if (!CheckOk(graph.mark_output(loss_result.value()->output(0)), "mark_output(loss)")) {
+    return frame::Status::make(frame::ErrorCode::kInternal, "mark_output(loss) failed");
+  }
+  return graph;
+}
+
+// 建推理图,图输入序 [data_input, 逐层 weight,bias...](无 target),
+// 单输出 = loss.prediction 引用层的输出(与
+// frame::frontend::lower_to_inference_graph 同一构图口径)。
+frame::Result<frame::ir::Graph> BuildInferenceGraph() {
+  using frame::ir::Graph;
+  using frame::ir::Node;
+  using frame::ir::Value;
+  using frame::ops::create_node_with_inferred_types;
+
+  Graph graph("tiny_mlp_inference");
+  const frame::Result<Value*> data_input_result =
+      graph.add_graph_input(MakeFloat32TensorType({8, 4}));
+  if (!data_input_result.is_ok()) return data_input_result.status();
+  Value* data_input = data_input_result.value();
+
+  // Layer 0 ("layer0"): matmul + bias + relu
+  const frame::Result<Value*> layer0_weight_result = graph.add_graph_input(
+      MakeFloat32TensorType({4, 8}));
+  if (!layer0_weight_result.is_ok()) return layer0_weight_result.status();
+  Value* layer0_weight = layer0_weight_result.value();
+  const frame::Result<Node*> layer0_matmul_result =
+      create_node_with_inferred_types(graph, "matmul", {data_input, layer0_weight});
+  if (!layer0_matmul_result.is_ok()) return layer0_matmul_result.status();
+  Value* layer0_matmul_out = layer0_matmul_result.value()->output(0);
+  const frame::Result<Value*> layer0_bias_result = graph.add_graph_input(
+      MakeFloat32TensorType({8, 8}));
+  if (!layer0_bias_result.is_ok()) return layer0_bias_result.status();
+  Value* layer0_bias = layer0_bias_result.value();
+  const frame::Result<Node*> layer0_add_result =
+      create_node_with_inferred_types(graph, "add", {layer0_matmul_out, layer0_bias});
+  if (!layer0_add_result.is_ok()) return layer0_add_result.status();
+  Value* layer0_add_out = layer0_add_result.value()->output(0);
+  const frame::Result<Node*> layer0_relu_result =
+      create_node_with_inferred_types(graph, "relu", {layer0_add_out});
+  if (!layer0_relu_result.is_ok()) return layer0_relu_result.status();
+  Value* layer0_relu_out = layer0_relu_result.value()->output(0);
+  Value* layer0_output = layer0_relu_out;
+
+  // Layer 1 ("layer1"): matmul
+  const frame::Result<Value*> layer1_weight_result = graph.add_graph_input(
+      MakeFloat32TensorType({8, 1}));
+  if (!layer1_weight_result.is_ok()) return layer1_weight_result.status();
+  Value* layer1_weight = layer1_weight_result.value();
+  const frame::Result<Node*> layer1_matmul_result =
+      create_node_with_inferred_types(graph, "matmul", {layer0_output, layer1_weight});
+  if (!layer1_matmul_result.is_ok()) return layer1_matmul_result.status();
+  Value* layer1_matmul_out = layer1_matmul_result.value()->output(0);
+  Value* layer1_output = layer1_matmul_out;
+
+  if (!CheckOk(graph.mark_output(layer1_output), "mark_output(prediction)")) {
+    return frame::Status::make(frame::ErrorCode::kInternal, "mark_output(prediction) failed");
+  }
+  return graph;
+}
+
+}  // namespace
+
+int main() {
+  // ---- 1. 建训练前向图 + 反向图 + 编译 ----
+  const frame::Result<frame::ir::Graph> training_graph_result = BuildTrainingGraph();
+  if (!CheckOk(training_graph_result.status(), "BuildTrainingGraph")) return 1;
+
+  const std::vector<int32_t> wrt{1, 2, 3};
+  const frame::Result<frame::ir::Graph> backward_graph_result =
+      frame::compiler::build_backward_graph(training_graph_result.value(), 0, wrt);
+  if (!CheckOk(backward_graph_result.status(), "build_backward_graph")) return 1;
+
+  const frame::ir::OpQuery op_query = frame::ops::make_op_query();
+  if (!CheckOk(backward_graph_result.value().verify(op_query), "verify(backward_graph)")) return 1;
+
+  const frame::Result<std::shared_ptr<frame::hal::Executable>> train_executable_result =
+      frame::runtime::compile(backward_graph_result.value(), frame::kCpuBackendName,
+                             frame::hal::CompileOptions{});
+  if (!CheckOk(train_executable_result.status(), "runtime::compile(train)")) return 1;
+
+  // ---- 2. 建 SGD 更新图 + 编译 ----
+  std::vector<frame::ir::TensorType> param_types;
+  param_types.push_back(MakeFloat32TensorType({4, 8}));
+  param_types.push_back(MakeFloat32TensorType({8, 8}));
+  param_types.push_back(MakeFloat32TensorType({8, 1}));
+
+  const frame::Result<frame::ir::Graph> update_graph_result =
+      frame::compiler::build_sgd_update_graph(param_types, kLearningRate);
+  if (!CheckOk(update_graph_result.status(), "build_sgd_update_graph")) return 1;
+  if (!CheckOk(update_graph_result.value().verify(op_query), "verify(update_graph)")) return 1;
+
+  const frame::Result<std::shared_ptr<frame::hal::Executable>> update_executable_result =
+      frame::runtime::compile(update_graph_result.value(), frame::kCpuBackendName,
+                             frame::hal::CompileOptions{});
+  if (!CheckOk(update_executable_result.status(), "runtime::compile(update)")) return 1;
+
+  // ---- 3. 取 cpu 后端 allocator ----
+  const frame::Result<frame::hal::Backend*> backend_result =
+      frame::hal::BackendRegistry::instance().get(frame::kCpuBackendName);
+  if (!CheckOk(backend_result.status(), "BackendRegistry::get")) return 1;
+  frame::hal::Backend* backend = backend_result.value();
+  const frame::Device device = frame::cpu_device();
+  frame::hal::Allocator* allocator = backend->allocator(device);
+
+  // ---- 4. 生成宿主侧数据/参数(std::mt19937(kSeed),顺序 = 数据输入
+  //    -> target -> 逐层参数[weight 先 bias],与 frame_dslc --run 完全
+  //    一致的抽取顺序,同 seed 同轨迹)----
+  std::mt19937 rng(kSeed);
+  auto draw_uniform = [&rng](float lo, float hi, int64_t count) {
+    std::uniform_real_distribution<float> dist(lo, hi);
+    std::vector<float> values(static_cast<size_t>(count));
+    for (float& v : values) v = dist(rng);
+    return values;
+  };
+
+  const std::vector<float> data_input_values = draw_uniform(-1.0F, 1.0F, 32);
+  const std::vector<float> target_values = draw_uniform(-1.0F, 1.0F, 8);
+
+  const std::vector<float> layer0_weight_values =
+      draw_uniform(kParamWeightLo, kParamWeightHi, 32);
+  const std::vector<float> layer0_bias_values =
+      draw_uniform(kParamBiasLo, kParamBiasHi, 64);
+  const std::vector<float> layer1_weight_values =
+      draw_uniform(kParamWeightLo, kParamWeightHi, 8);
+
+  // ---- 5. 建 Tensor ----
+  const frame::Result<frame::Tensor> data_input_tensor_result = frame::Tensor::empty(
+      frame::Shape({8, 4}), frame::DType::of<float>(), device, *allocator);
+  if (!CheckOk(data_input_tensor_result.status(), "Tensor::empty(data_input)")) return 1;
+  frame::Tensor data_input_tensor = data_input_tensor_result.value();
+  std::copy(data_input_values.begin(), data_input_values.end(), data_input_tensor.data<float>());
+
+  const frame::Result<frame::Tensor> target_tensor_result = frame::Tensor::empty(
+      frame::Shape({8, 1}), frame::DType::of<float>(), device, *allocator);
+  if (!CheckOk(target_tensor_result.status(), "Tensor::empty(target)")) return 1;
+  frame::Tensor target_tensor = target_tensor_result.value();
+  std::copy(target_values.begin(), target_values.end(), target_tensor.data<float>());
+
+  std::vector<frame::Tensor> params;
+  const frame::Result<frame::Tensor> layer0_weight_tensor_result =
+      frame::Tensor::empty(frame::Shape({4, 8}), frame::DType::of<float>(), device, *allocator);
+  if (!CheckOk(layer0_weight_tensor_result.status(), "Tensor::empty(layer0_weight)")) return 1;
+  frame::Tensor layer0_weight_tensor = layer0_weight_tensor_result.value();
+  std::copy(layer0_weight_values.begin(), layer0_weight_values.end(), layer0_weight_tensor.data<float>());
+  params.push_back(layer0_weight_tensor);
+  const frame::Result<frame::Tensor> layer0_bias_tensor_result =
+      frame::Tensor::empty(frame::Shape({8, 8}), frame::DType::of<float>(), device, *allocator);
+  if (!CheckOk(layer0_bias_tensor_result.status(), "Tensor::empty(layer0_bias)")) return 1;
+  frame::Tensor layer0_bias_tensor = layer0_bias_tensor_result.value();
+  std::copy(layer0_bias_values.begin(), layer0_bias_values.end(), layer0_bias_tensor.data<float>());
+  params.push_back(layer0_bias_tensor);
+  const frame::Result<frame::Tensor> layer1_weight_tensor_result =
+      frame::Tensor::empty(frame::Shape({8, 1}), frame::DType::of<float>(), device, *allocator);
+  if (!CheckOk(layer1_weight_tensor_result.status(), "Tensor::empty(layer1_weight)")) return 1;
+  frame::Tensor layer1_weight_tensor = layer1_weight_tensor_result.value();
+  std::copy(layer1_weight_values.begin(), layer1_weight_values.end(), layer1_weight_tensor.data<float>());
+  params.push_back(layer1_weight_tensor);
+
+  // ---- 6. 训练循环 ----
+  double final_loss = 0.0;
+  for (int32_t step = 0; step < kNumSteps; ++step) {
+    std::vector<frame::Tensor> train_inputs;
+    train_inputs.push_back(data_input_tensor);
+    for (const frame::Tensor& p : params) train_inputs.push_back(p);
+    train_inputs.push_back(target_tensor);
+
+    const frame::Result<std::vector<frame::Tensor>> train_outputs_result =
+        frame::runtime::run_with_allocated_outputs(*train_executable_result.value(),
+                                                   frame::kCpuBackendName, train_inputs);
+    if (!CheckOk(train_outputs_result.status(), "run_with_allocated_outputs(train)")) return 1;
+    const std::vector<frame::Tensor>& train_outputs = train_outputs_result.value();
+
+    const float loss_value = *static_cast<const float*>(train_outputs[0].raw_data());
+    final_loss = static_cast<double>(loss_value);
+    if (kLogEvery > 0 && (step % kLogEvery == 0 || step == kNumSteps - 1)) {
+      std::cout << "step " << step << ": loss = " << loss_value << "\n";
+    }
+
+    std::vector<frame::Tensor> update_inputs;
+    for (const frame::Tensor& p : params) update_inputs.push_back(p);
+    for (size_t i = 1; i < train_outputs.size(); ++i) update_inputs.push_back(train_outputs[i]);
+
+    const frame::Result<std::vector<frame::Tensor>> update_outputs_result =
+        frame::runtime::run_with_allocated_outputs(*update_executable_result.value(),
+                                                   frame::kCpuBackendName, update_inputs);
+    if (!CheckOk(update_outputs_result.status(), "run_with_allocated_outputs(update)")) return 1;
+    params = update_outputs_result.value();
+  }
+  std::cout << "final loss = " << final_loss << "\n";
+
+  // ---- 7. 推理:BuildInferenceGraph + compile + 执行一次 ----
+  const frame::Result<frame::ir::Graph> inference_graph_result = BuildInferenceGraph();
+  if (!CheckOk(inference_graph_result.status(), "BuildInferenceGraph")) return 1;
+  if (!CheckOk(inference_graph_result.value().verify(op_query), "verify(inference_graph)")) return 1;
+
+  const frame::Result<std::shared_ptr<frame::hal::Executable>> inference_executable_result =
+      frame::runtime::compile(inference_graph_result.value(), frame::kCpuBackendName,
+                             frame::hal::CompileOptions{});
+  if (!CheckOk(inference_executable_result.status(), "runtime::compile(inference)")) return 1;
+
+  std::vector<frame::Tensor> inference_inputs;
+  inference_inputs.push_back(data_input_tensor);
+  for (const frame::Tensor& p : params) inference_inputs.push_back(p);
+
+  const frame::Result<std::vector<frame::Tensor>> inference_outputs_result =
+      frame::runtime::run_with_allocated_outputs(*inference_executable_result.value(),
+                                                 frame::kCpuBackendName, inference_inputs);
+  if (!CheckOk(inference_outputs_result.status(), "run_with_allocated_outputs(inference)")) return 1;
+
+  const frame::Tensor& prediction_tensor = inference_outputs_result.value()[0];
+  const float* prediction_data = static_cast<const float*>(prediction_tensor.raw_data());
+  std::cout << "predictions =";
+  for (int64_t i = 0; i < prediction_tensor.numel(); ++i) {
+    std::cout << " " << prediction_data[i];
+  }
+  std::cout << "\n";
+
+  return 0;
+}

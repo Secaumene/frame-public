@@ -1,0 +1,5 @@
+%0 = graph_input() : float32[32,784]@cpu:0
+%1 = graph_input() : float32[784,256]@cpu:0
+%2 = matmul(%0, %1) : float32[32,256]@cpu:0
+%3 = relu(%2) : float32[32,256]@cpu:0
+graph_output(%3)

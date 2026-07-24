@@ -1,0 +1,9 @@
+# clangd 编辑器配置:把静态分析接到项目真实编译数据库上。
+# 背景:未接数据库时 clangd 回退默认标准(≤C++17),会对 C++20 语法
+# (如 device.h 的缺省比较运算符 `= default`)与项目 include 路径产生
+# 大量假阳性诊断;权威判定始终以 `bash scripts/ci_check.sh` 为准。
+# 前置:先跑一次 `cmake --preset cpu-only` 生成编译数据库
+# (CMAKE_EXPORT_COMPILE_COMMANDS 已在 preset 内开启)。
+CompileFlags:
+  CompilationDatabase: build/cpu-only
+  Add: [-std=c++20]

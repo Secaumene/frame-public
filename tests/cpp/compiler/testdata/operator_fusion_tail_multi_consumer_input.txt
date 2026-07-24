@@ -1,0 +1,8 @@
+%0 = graph_input() : float32[4]@cpu:0
+%1 = graph_input() : float32[4]@cpu:0
+%2 = add(%0, %1) : float32[4]@cpu:0
+%3 = relu(%2) : float32[4]@cpu:0
+%4 = square(%3) : float32[4]@cpu:0
+%5 = relu(%3) : float32[4]@cpu:0
+graph_output(%4)
+graph_output(%5)

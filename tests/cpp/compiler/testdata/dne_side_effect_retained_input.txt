@@ -1,0 +1,4 @@
+%0 = graph_input() : float32[4]@cpu:0
+%1 = test_side_effect_op(%0) : float32[4]@cpu:0
+%2 = relu(%0) : float32[4]@cpu:0
+graph_output(%2)

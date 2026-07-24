@@ -1,0 +1,11 @@
+%0 = graph_input() : float32[8,1,8,8]@cpu:0
+%1 = graph_input() : float32[64,1]@cpu:0
+%2 = graph_input() : float32[8,1]@cpu:0
+%3 = constant() {dtype=dtype(float32), shape=shape[4,1,2,2], value=[0.5, 0.5, 0.5, 0.5, 0.5, 0.5, -0.5, -0.5, 0.5, -0.5, 0.5, -0.5, 0.5, -0.5, -0.5, 0.5]} : float32[4,1,2,2]@cpu:0
+%4 = conv2d(%0, %3) {groups=1, padding=[0, 0], stride=[2, 2]} : float32[8,4,4,4]@cpu:0
+%5 = reshape(%4) {target_shape=shape[8,64]} : float32[8,64]@cpu:0
+%6 = matmul(%5, %1) : float32[8,1]@cpu:0
+%7 = add(%6, %2) : float32[8,1]@cpu:0
+%8 = graph_input() : float32[8,1]@cpu:0
+%9 = mse_loss(%7, %8) : float32[]@cpu:0
+graph_output(%9)

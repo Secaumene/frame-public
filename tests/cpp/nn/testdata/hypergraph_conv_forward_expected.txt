@@ -1,0 +1,17 @@
+%0 = graph_input() : float32[4,2]@cpu:0
+%1 = graph_input() : float32[2,1]@cpu:0
+%2 = constant() {dtype=dtype(int64), shape=shape[6], value=[0.0, 1.0, 1.0, 2.0, 2.0, 3.0]} : int64[6]@cpu:0
+%3 = constant() {dtype=dtype(int64), shape=shape[6], value=[0.0, 0.0, 1.0, 1.0, 2.0, 2.0]} : int64[6]@cpu:0
+%4 = constant() {dtype=dtype(float32), shape=shape[4,2], value=[1.0, 1.0, 0.7071067811865475, 0.7071067811865475, 0.7071067811865475, 0.7071067811865475, 1.0, 1.0]} : float32[4,2]@cpu:0
+%5 = mul(%0, %4) : float32[4,2]@cpu:0
+%6 = gather(%5, %2) : float32[6,2]@cpu:0
+%7 = constant() {dtype=dtype(float32), shape=shape[6,2], value=[0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5]} : float32[6,2]@cpu:0
+%8 = mul(%6, %7) : float32[6,2]@cpu:0
+%9 = scatter_add(%8, %3) {output_shape=shape[3,2]} : float32[3,2]@cpu:0
+%10 = gather(%9, %3) : float32[6,2]@cpu:0
+%11 = scatter_add(%10, %2) {output_shape=shape[4,2]} : float32[4,2]@cpu:0
+%12 = mul(%11, %4) : float32[4,2]@cpu:0
+%13 = matmul(%12, %1) : float32[4,1]@cpu:0
+%14 = graph_input() : float32[4,1]@cpu:0
+%15 = mse_loss(%13, %14) : float32[]@cpu:0
+graph_output(%15)

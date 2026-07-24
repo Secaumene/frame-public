@@ -1,0 +1,49 @@
+%0 = graph_input() : float32[4,3,2]@cpu:0
+%1 = graph_input() : float32[2,4]@cpu:0
+%2 = graph_input() : float32[4,2]@cpu:0
+%3 = reshape(%0) {target_shape=shape[12,2]} : float32[12,2]@cpu:0
+%4 = matmul(%3, %1) : float32[12,4]@cpu:0
+%5 = reshape(%4) {target_shape=shape[4,3,4]} : float32[4,3,4]@cpu:0
+%6 = constant() {dtype=dtype(float32), shape=shape[4,4], value=[0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]} : float32[4,4]@cpu:0
+%7 = constant() {dtype=dtype(float32), shape=shape[4,4], value=[0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5]} : float32[4,4]@cpu:0
+%8 = constant() {dtype=dtype(float32), shape=shape[4,4], value=[-0.5, -0.5, -0.5, -0.5, -0.5, -0.5, -0.5, -0.5, -0.5, -0.5, -0.5, -0.5, -0.5, -0.5, -0.5, -0.5]} : float32[4,4]@cpu:0
+%9 = constant() {dtype=dtype(float32), shape=shape[4,4], value=[1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]} : float32[4,4]@cpu:0
+%10 = constant() {dtype=dtype(float32), shape=shape[4,4], value=[-1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0]} : float32[4,4]@cpu:0
+%11 = slice(%5) {axis=1, start=0, stop=1} : float32[4,1,4]@cpu:0
+%12 = reshape(%11) {target_shape=shape[4,4]} : float32[4,4]@cpu:0
+%13 = mul(%7, %6) : float32[4,4]@cpu:0
+%14 = add(%13, %12) : float32[4,4]@cpu:0
+%15 = add(%14, %8) : float32[4,4]@cpu:0
+%16 = heaviside_surrogate(%15) {alpha=3.0} : float32[4,4]@cpu:0
+%17 = mul(%10, %16) : float32[4,4]@cpu:0
+%18 = add(%9, %17) : float32[4,4]@cpu:0
+%19 = mul(%14, %18) : float32[4,4]@cpu:0
+%20 = reshape(%16) {target_shape=shape[4,1,4]} : float32[4,1,4]@cpu:0
+%21 = slice(%5) {axis=1, start=1, stop=2} : float32[4,1,4]@cpu:0
+%22 = reshape(%21) {target_shape=shape[4,4]} : float32[4,4]@cpu:0
+%23 = mul(%7, %19) : float32[4,4]@cpu:0
+%24 = add(%23, %22) : float32[4,4]@cpu:0
+%25 = add(%24, %8) : float32[4,4]@cpu:0
+%26 = heaviside_surrogate(%25) {alpha=3.0} : float32[4,4]@cpu:0
+%27 = mul(%10, %26) : float32[4,4]@cpu:0
+%28 = add(%9, %27) : float32[4,4]@cpu:0
+%29 = mul(%24, %28) : float32[4,4]@cpu:0
+%30 = reshape(%26) {target_shape=shape[4,1,4]} : float32[4,1,4]@cpu:0
+%31 = slice(%5) {axis=1, start=2, stop=3} : float32[4,1,4]@cpu:0
+%32 = reshape(%31) {target_shape=shape[4,4]} : float32[4,4]@cpu:0
+%33 = mul(%7, %29) : float32[4,4]@cpu:0
+%34 = add(%33, %32) : float32[4,4]@cpu:0
+%35 = add(%34, %8) : float32[4,4]@cpu:0
+%36 = heaviside_surrogate(%35) {alpha=3.0} : float32[4,4]@cpu:0
+%37 = mul(%10, %36) : float32[4,4]@cpu:0
+%38 = add(%9, %37) : float32[4,4]@cpu:0
+%39 = mul(%34, %38) : float32[4,4]@cpu:0
+%40 = reshape(%36) {target_shape=shape[4,1,4]} : float32[4,1,4]@cpu:0
+%41 = concat(%20, %30, %40) {axis=1} : float32[4,3,4]@cpu:0
+%42 = reshape(%41) {target_shape=shape[12,4]} : float32[12,4]@cpu:0
+%43 = matmul(%42, %2) : float32[12,2]@cpu:0
+%44 = reshape(%43) {target_shape=shape[4,3,2]} : float32[4,3,2]@cpu:0
+%45 = sum(%44) {axes=[1], keepdims=false} : float32[4,2]@cpu:0
+%46 = graph_input() : float32[4,2]@cpu:0
+%47 = mse_loss(%45, %46) : float32[]@cpu:0
+graph_output(%47)

@@ -1,0 +1,89 @@
+%0 = graph_input() : float32[8,4,3]@cpu:0
+%1 = graph_input() : float32[3,16]@cpu:0
+%2 = graph_input() : float32[4,16]@cpu:0
+%3 = graph_input() : float32[8,16]@cpu:0
+%4 = graph_input() : float32[4,1]@cpu:0
+%5 = graph_input() : float32[8,1]@cpu:0
+%6 = constant() {dtype=dtype(float32), shape=shape[8,4], value=[0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]} : float32[8,4]@cpu:0
+%7 = constant() {dtype=dtype(float32), shape=shape[8,4], value=[0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]} : float32[8,4]@cpu:0
+%8 = slice(%0) {axis=1, start=0, stop=1} : float32[8,1,3]@cpu:0
+%9 = reshape(%8) {target_shape=shape[8,3]} : float32[8,3]@cpu:0
+%10 = matmul(%9, %1) : float32[8,16]@cpu:0
+%11 = matmul(%6, %2) : float32[8,16]@cpu:0
+%12 = add(%10, %11) : float32[8,16]@cpu:0
+%13 = add(%12, %3) : float32[8,16]@cpu:0
+%14 = slice(%13) {axis=1, start=0, stop=4} : float32[8,4]@cpu:0
+%15 = slice(%13) {axis=1, start=4, stop=8} : float32[8,4]@cpu:0
+%16 = slice(%13) {axis=1, start=8, stop=12} : float32[8,4]@cpu:0
+%17 = slice(%13) {axis=1, start=12, stop=16} : float32[8,4]@cpu:0
+%18 = sigmoid(%14) : float32[8,4]@cpu:0
+%19 = sigmoid(%15) : float32[8,4]@cpu:0
+%20 = tanh(%16) : float32[8,4]@cpu:0
+%21 = sigmoid(%17) : float32[8,4]@cpu:0
+%22 = mul(%19, %7) : float32[8,4]@cpu:0
+%23 = mul(%18, %20) : float32[8,4]@cpu:0
+%24 = add(%22, %23) : float32[8,4]@cpu:0
+%25 = tanh(%24) : float32[8,4]@cpu:0
+%26 = mul(%21, %25) : float32[8,4]@cpu:0
+%27 = slice(%0) {axis=1, start=1, stop=2} : float32[8,1,3]@cpu:0
+%28 = reshape(%27) {target_shape=shape[8,3]} : float32[8,3]@cpu:0
+%29 = matmul(%28, %1) : float32[8,16]@cpu:0
+%30 = matmul(%26, %2) : float32[8,16]@cpu:0
+%31 = add(%29, %30) : float32[8,16]@cpu:0
+%32 = add(%31, %3) : float32[8,16]@cpu:0
+%33 = slice(%32) {axis=1, start=0, stop=4} : float32[8,4]@cpu:0
+%34 = slice(%32) {axis=1, start=4, stop=8} : float32[8,4]@cpu:0
+%35 = slice(%32) {axis=1, start=8, stop=12} : float32[8,4]@cpu:0
+%36 = slice(%32) {axis=1, start=12, stop=16} : float32[8,4]@cpu:0
+%37 = sigmoid(%33) : float32[8,4]@cpu:0
+%38 = sigmoid(%34) : float32[8,4]@cpu:0
+%39 = tanh(%35) : float32[8,4]@cpu:0
+%40 = sigmoid(%36) : float32[8,4]@cpu:0
+%41 = mul(%38, %24) : float32[8,4]@cpu:0
+%42 = mul(%37, %39) : float32[8,4]@cpu:0
+%43 = add(%41, %42) : float32[8,4]@cpu:0
+%44 = tanh(%43) : float32[8,4]@cpu:0
+%45 = mul(%40, %44) : float32[8,4]@cpu:0
+%46 = slice(%0) {axis=1, start=2, stop=3} : float32[8,1,3]@cpu:0
+%47 = reshape(%46) {target_shape=shape[8,3]} : float32[8,3]@cpu:0
+%48 = matmul(%47, %1) : float32[8,16]@cpu:0
+%49 = matmul(%45, %2) : float32[8,16]@cpu:0
+%50 = add(%48, %49) : float32[8,16]@cpu:0
+%51 = add(%50, %3) : float32[8,16]@cpu:0
+%52 = slice(%51) {axis=1, start=0, stop=4} : float32[8,4]@cpu:0
+%53 = slice(%51) {axis=1, start=4, stop=8} : float32[8,4]@cpu:0
+%54 = slice(%51) {axis=1, start=8, stop=12} : float32[8,4]@cpu:0
+%55 = slice(%51) {axis=1, start=12, stop=16} : float32[8,4]@cpu:0
+%56 = sigmoid(%52) : float32[8,4]@cpu:0
+%57 = sigmoid(%53) : float32[8,4]@cpu:0
+%58 = tanh(%54) : float32[8,4]@cpu:0
+%59 = sigmoid(%55) : float32[8,4]@cpu:0
+%60 = mul(%57, %43) : float32[8,4]@cpu:0
+%61 = mul(%56, %58) : float32[8,4]@cpu:0
+%62 = add(%60, %61) : float32[8,4]@cpu:0
+%63 = tanh(%62) : float32[8,4]@cpu:0
+%64 = mul(%59, %63) : float32[8,4]@cpu:0
+%65 = slice(%0) {axis=1, start=3, stop=4} : float32[8,1,3]@cpu:0
+%66 = reshape(%65) {target_shape=shape[8,3]} : float32[8,3]@cpu:0
+%67 = matmul(%66, %1) : float32[8,16]@cpu:0
+%68 = matmul(%64, %2) : float32[8,16]@cpu:0
+%69 = add(%67, %68) : float32[8,16]@cpu:0
+%70 = add(%69, %3) : float32[8,16]@cpu:0
+%71 = slice(%70) {axis=1, start=0, stop=4} : float32[8,4]@cpu:0
+%72 = slice(%70) {axis=1, start=4, stop=8} : float32[8,4]@cpu:0
+%73 = slice(%70) {axis=1, start=8, stop=12} : float32[8,4]@cpu:0
+%74 = slice(%70) {axis=1, start=12, stop=16} : float32[8,4]@cpu:0
+%75 = sigmoid(%71) : float32[8,4]@cpu:0
+%76 = sigmoid(%72) : float32[8,4]@cpu:0
+%77 = tanh(%73) : float32[8,4]@cpu:0
+%78 = sigmoid(%74) : float32[8,4]@cpu:0
+%79 = mul(%76, %62) : float32[8,4]@cpu:0
+%80 = mul(%75, %77) : float32[8,4]@cpu:0
+%81 = add(%79, %80) : float32[8,4]@cpu:0
+%82 = tanh(%81) : float32[8,4]@cpu:0
+%83 = mul(%78, %82) : float32[8,4]@cpu:0
+%84 = matmul(%83, %4) : float32[8,1]@cpu:0
+%85 = add(%84, %5) : float32[8,1]@cpu:0
+%86 = graph_input() : float32[8,1]@cpu:0
+%87 = mse_loss(%85, %86) : float32[]@cpu:0
+graph_output(%87)

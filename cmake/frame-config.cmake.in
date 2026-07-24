@@ -1,0 +1,28 @@
+# =============================================================================
+# frame-config.cmake.in —— frame 包的 CMake 包配置模板
+#
+# 经 cmake/frame_install.cmake 的 configure_package_config_file() 渲染为
+# <prefix>/lib/cmake/frame/frame-config.cmake;外部工程
+# find_package(frame REQUIRED) 加载本文件后即可
+# target_link_libraries(... frame::frame)。
+#
+# 规则出处:docs/standards/build-and-test.md 第 10 节(BUILD-040)。
+# =============================================================================
+
+@PACKAGE_INIT@
+
+# 导出的 target 用 $<LINK_LIBRARY:WHOLE_ARCHIVE,...> 生成表达式表达后端/ops/
+# compiler 静态注册链接(缘由见 cmake/frame_backend.cmake 头部注释),该生成
+# 表达式自 CMake 3.24 起才支持。消费方 CMake 版本低于此下限时,加载
+# frame-targets.cmake 会得到费解的生成表达式解析错误,故此处提前显式校验并
+# 给出明确诊断。
+if(CMAKE_VERSION VERSION_LESS 3.24)
+  message(FATAL_ERROR
+    "frame package requires CMake >= 3.24 (found ${CMAKE_VERSION}): "
+    "exported targets use the $<LINK_LIBRARY:WHOLE_ARCHIVE,...> generator "
+    "expression, which CMake 3.24 introduced.")
+endif()
+
+include("${CMAKE_CURRENT_LIST_DIR}/frame-targets.cmake")
+
+check_required_components(frame)

@@ -1,0 +1,4 @@
+%0 = graph_input() : float32[4]@cpu:0
+%1 = graph_input() : float32[4]@cpu:0
+%2 = fused_elementwise_internal(%0, %1) {arities=[2, 1], ops="add;relu"} : float32[4]@cpu:0
+graph_output(%2)

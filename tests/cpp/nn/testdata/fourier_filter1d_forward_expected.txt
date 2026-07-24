@@ -1,0 +1,17 @@
+%0 = graph_input() : float32[2,3,8]@cpu:0
+%1 = graph_input() : float32[2,3,5,1]@cpu:0
+%2 = graph_input() : float32[2,3,5,1]@cpu:0
+%3 = rfft(%0) : float32[2,3,5,2]@cpu:0
+%4 = slice(%3) {axis=3, start=0, stop=1} : float32[2,3,5,1]@cpu:0
+%5 = slice(%3) {axis=3, start=1, stop=2} : float32[2,3,5,1]@cpu:0
+%6 = mul(%1, %4) : float32[2,3,5,1]@cpu:0
+%7 = mul(%2, %5) : float32[2,3,5,1]@cpu:0
+%8 = constant() {dtype=dtype(float32), shape=shape[2,3,5,1], value=[-1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0]} : float32[2,3,5,1]@cpu:0
+%9 = mul(%8, %7) : float32[2,3,5,1]@cpu:0
+%10 = add(%6, %9) : float32[2,3,5,1]@cpu:0
+%11 = mul(%1, %5) : float32[2,3,5,1]@cpu:0
+%12 = mul(%2, %4) : float32[2,3,5,1]@cpu:0
+%13 = add(%11, %12) : float32[2,3,5,1]@cpu:0
+%14 = concat(%10, %13) {axis=3} : float32[2,3,5,2]@cpu:0
+%15 = irfft(%14) {n=8} : float32[2,3,8]@cpu:0
+graph_output(%15)

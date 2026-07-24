@@ -1,0 +1,21 @@
+# 基于 Google 风格;仅列出与基线的差异项,禁止再加其他覆盖(改动须走 ADR)
+BasedOnStyle: Google
+ColumnLimit: 100
+IndentWidth: 2
+PointerAlignment: Left
+DerivePointerAlignment: false
+IncludeBlocks: Regroup
+IncludeCategories:
+  # 本项目公共头(<frame/...>)
+  - Regex: '^<frame/'
+    Priority: 2
+  # 硬件 SDK 头(CUDA / SYCL / OpenVINO / AscendCL)
+  - Regex: '^<(cuda|sycl|openvino|acl)'
+    Priority: 3
+  # 标准库与其他系统头
+  - Regex: '^<'
+    Priority: 1
+  # 内部头("" 形式)
+  - Regex: '.*'
+    Priority: 4
+SortIncludes: CaseSensitive

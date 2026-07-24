@@ -1,0 +1,4 @@
+%0 = graph_input() : float32[2,3]@cpu:0
+%1 = graph_input() : float32[2,3]@cpu:0
+%2 = mul(%0, %1) : float32[2,3]@cpu:0
+graph_output(%2)

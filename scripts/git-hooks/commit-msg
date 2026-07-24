@@ -1,0 +1,82 @@
+#!/usr/bin/env bash
+# git commit-msg 钩子:校验 commit 消息首行格式。
+#
+# 用途:强制执行 commit 首行规范 "type(scope): 中文摘要":
+#   1. type 与 scope 均为封闭枚举(见下方正则,扩充须先改
+#      docs/standards/language-policy.md 再同步本钩子);
+#   2. 首行长度不超过 72 字符(一个汉字计 1 字符);
+#   3. 摘要须含至少一个汉字;
+#   4. 豁免:以 Merge / Revert / fixup! / squash! 开头的自动生成消息。
+#
+# 用法(安装,新克隆仓库后执行一次):
+#   git config core.hooksPath scripts/git-hooks
+# git 在提交时自动以消息文件路径为 $1 调用本钩子。
+#
+# 规则出处:docs/standards/language-policy.md(LANG-010)。
+
+set -u
+
+# 使用 UTF-8 语言环境,保证 ${#var} 按字符而非字节计数
+if locale -a 2>/dev/null | grep -qiE '^C\.utf-?8$'; then
+  export LC_ALL=C.UTF-8
+fi
+
+msg_file="${1:?usage: commit-msg <message-file>}"
+
+# 取首个非注释、非空白行作为首行(git 清理后即为摘要行)
+first_line="$(sed -e '/^#/d' -e '/^[[:space:]]*$/d' "$msg_file" | head -n 1)"
+
+# 豁免:merge/revert 及 rebase 临时提交的自动生成消息
+case "$first_line" in
+  "Merge "*|"Revert "*|"fixup!"*|"squash!"*)
+    exit 0
+    ;;
+esac
+
+HEADER_RE='^(feat|fix|perf|refactor|docs|test|build|ci|chore|revert)\((core|ir|compiler|runtime|hal|ops|frontend|backend-cpu|backend-cuda|backend-intel-gpu|backend-intel-npu|backend-ascend|python|cmake|docs|tests|examples|tools|scripts)\): .+'
+
+# 判定字符串是否含至少一个汉字(U+4E00..U+9FFF)
+has_han() {
+  if printf 'a\n' | grep -qP 'a' 2>/dev/null; then
+    printf '%s\n' "$1" | grep -qP '[\x{4e00}-\x{9fff}]'
+  else
+    # 回退:按 UTF-8 首字节范围近似匹配 CJK 三字节序列
+    printf '%s\n' "$1" | LC_ALL=C grep -q $'[\xe4-\xe9]'
+  fi
+}
+
+errors=()
+
+if ! printf '%s\n' "$first_line" | grep -qE "$HEADER_RE"; then
+  errors+=("首行不符合 \"type(scope): 摘要\" 格式,或 type/scope 不在封闭枚举内(注意冒号为 ASCII \":\" 且后接一个空格)")
+fi
+
+line_len=${#first_line}
+if [ "$line_len" -gt 72 ]; then
+  errors+=("首行长度 ${line_len} 字符,超过 72 字符上限")
+fi
+
+if ! has_han "$first_line"; then
+  errors+=("摘要必须为中文(至少包含一个汉字)")
+fi
+
+if [ "${#errors[@]}" -gt 0 ]; then
+  {
+    echo "commit-msg 钩子检查未通过(规则出处:docs/standards/language-policy.md LANG-010):"
+    for e in "${errors[@]}"; do
+      echo "  - ${e}"
+    done
+    echo ""
+    echo "要求格式:type(scope): 中文摘要   (首行不超过 72 字符)"
+    echo "  type  取值:feat fix perf refactor docs test build ci chore revert"
+    echo "  scope 取值:core ir compiler runtime hal ops frontend backend-cpu backend-cuda"
+    echo "             backend-intel-gpu backend-intel-npu backend-ascend python cmake docs"
+    echo "             tests examples tools scripts"
+    echo "正例:feat(ops): 新增 relu 算子的 schema 注册"
+    echo "豁免:以 Merge / Revert / fixup! / squash! 开头的自动生成消息。"
+    echo "当前首行:${first_line}"
+  } >&2
+  exit 1
+fi
+
+exit 0

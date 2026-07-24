@@ -1,0 +1,51 @@
+%0 = graph_input() : float32[2,3,8]@cpu:0
+%1 = graph_input() : float32[3,8]@cpu:0
+%2 = graph_input() : float32[3,8]@cpu:0
+%3 = graph_input() : float32[4,3,1]@cpu:0
+%4 = graph_input() : float32[4]@cpu:0
+%5 = rfft(%0) : float32[2,3,5,2]@cpu:0
+%6 = slice(%5) {axis=2, start=0, stop=2} : float32[2,3,2,2]@cpu:0
+%7 = slice(%6) {axis=2, start=0, stop=1} : float32[2,3,1,2]@cpu:0
+%8 = slice(%7) {axis=3, start=0, stop=1} : float32[2,3,1,1]@cpu:0
+%9 = slice(%7) {axis=3, start=1, stop=2} : float32[2,3,1,1]@cpu:0
+%10 = reshape(%8) {target_shape=shape[2,3]} : float32[2,3]@cpu:0
+%11 = reshape(%9) {target_shape=shape[2,3]} : float32[2,3]@cpu:0
+%12 = slice(%1) {axis=1, start=0, stop=4} : float32[3,4]@cpu:0
+%13 = slice(%2) {axis=1, start=0, stop=4} : float32[3,4]@cpu:0
+%14 = matmul(%10, %12) : float32[2,4]@cpu:0
+%15 = matmul(%11, %13) : float32[2,4]@cpu:0
+%16 = matmul(%10, %13) : float32[2,4]@cpu:0
+%17 = matmul(%11, %12) : float32[2,4]@cpu:0
+%18 = constant() {dtype=dtype(float32), shape=shape[2,4], value=[-1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0]} : float32[2,4]@cpu:0
+%19 = mul(%18, %15) : float32[2,4]@cpu:0
+%20 = add(%14, %19) : float32[2,4]@cpu:0
+%21 = add(%16, %17) : float32[2,4]@cpu:0
+%22 = reshape(%20) {target_shape=shape[2,4,1,1]} : float32[2,4,1,1]@cpu:0
+%23 = reshape(%21) {target_shape=shape[2,4,1,1]} : float32[2,4,1,1]@cpu:0
+%24 = concat(%22, %23) {axis=3} : float32[2,4,1,2]@cpu:0
+%25 = slice(%6) {axis=2, start=1, stop=2} : float32[2,3,1,2]@cpu:0
+%26 = slice(%25) {axis=3, start=0, stop=1} : float32[2,3,1,1]@cpu:0
+%27 = slice(%25) {axis=3, start=1, stop=2} : float32[2,3,1,1]@cpu:0
+%28 = reshape(%26) {target_shape=shape[2,3]} : float32[2,3]@cpu:0
+%29 = reshape(%27) {target_shape=shape[2,3]} : float32[2,3]@cpu:0
+%30 = slice(%1) {axis=1, start=4, stop=8} : float32[3,4]@cpu:0
+%31 = slice(%2) {axis=1, start=4, stop=8} : float32[3,4]@cpu:0
+%32 = matmul(%28, %30) : float32[2,4]@cpu:0
+%33 = matmul(%29, %31) : float32[2,4]@cpu:0
+%34 = matmul(%28, %31) : float32[2,4]@cpu:0
+%35 = matmul(%29, %30) : float32[2,4]@cpu:0
+%36 = constant() {dtype=dtype(float32), shape=shape[2,4], value=[-1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0]} : float32[2,4]@cpu:0
+%37 = mul(%36, %33) : float32[2,4]@cpu:0
+%38 = add(%32, %37) : float32[2,4]@cpu:0
+%39 = add(%34, %35) : float32[2,4]@cpu:0
+%40 = reshape(%38) {target_shape=shape[2,4,1,1]} : float32[2,4,1,1]@cpu:0
+%41 = reshape(%39) {target_shape=shape[2,4,1,1]} : float32[2,4,1,1]@cpu:0
+%42 = concat(%40, %41) {axis=3} : float32[2,4,1,2]@cpu:0
+%43 = concat(%24, %42) {axis=2} : float32[2,4,2,2]@cpu:0
+%44 = constant() {dtype=dtype(float32), shape=shape[2,4,3,2], value=[0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]} : float32[2,4,3,2]@cpu:0
+%45 = concat(%43, %44) {axis=2} : float32[2,4,5,2]@cpu:0
+%46 = irfft(%45) {n=8} : float32[2,4,8]@cpu:0
+%47 = conv1d(%0, %3, %4) {groups=1, padding=0, stride=1} : float32[2,4,8]@cpu:0
+%48 = add(%46, %47) : float32[2,4,8]@cpu:0
+%49 = tanh(%48) : float32[2,4,8]@cpu:0
+graph_output(%49)

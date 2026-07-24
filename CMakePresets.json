@@ -1,0 +1,220 @@
+{
+  "version": 6,
+  "cmakeMinimumRequired": {
+    "major": 3,
+    "minor": 25,
+    "patch": 0
+  },
+  "configurePresets": [
+    {
+      "name": "base",
+      "hidden": true,
+      "binaryDir": "${sourceDir}/build/${presetName}",
+      "cacheVariables": {
+        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
+      }
+    },
+    {
+      "name": "dev",
+      "displayName": "Development (Debug, all backends AUTO)",
+      "inherits": "base",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "FRAME_ENABLE_CUDA": "AUTO",
+        "FRAME_ENABLE_INTEL_GPU": "AUTO",
+        "FRAME_ENABLE_INTEL_NPU": "AUTO",
+        "FRAME_ENABLE_ASCEND": "AUTO",
+        "FRAME_BUILD_TESTS": "ON",
+        "FRAME_BUILD_EXAMPLES": "ON"
+      }
+    },
+    {
+      "name": "dev-asan",
+      "displayName": "Development with AddressSanitizer",
+      "inherits": "dev",
+      "cacheVariables": {
+        "FRAME_ENABLE_ASAN": "ON"
+      }
+    },
+    {
+      "name": "release",
+      "displayName": "Release (all backends AUTO)",
+      "inherits": "base",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "FRAME_ENABLE_CUDA": "AUTO",
+        "FRAME_ENABLE_INTEL_GPU": "AUTO",
+        "FRAME_ENABLE_INTEL_NPU": "AUTO",
+        "FRAME_ENABLE_ASCEND": "AUTO"
+      }
+    },
+    {
+      "name": "cpu-only",
+      "displayName": "CPU only (all hardware backends OFF, CI smoke)",
+      "inherits": "base",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "FRAME_ENABLE_CUDA": "OFF",
+        "FRAME_ENABLE_INTEL_GPU": "OFF",
+        "FRAME_ENABLE_INTEL_NPU": "OFF",
+        "FRAME_ENABLE_ASCEND": "OFF",
+        "FRAME_BUILD_TESTS": "ON"
+      }
+    },
+    {
+      "name": "cuda",
+      "displayName": "CUDA backend forced ON",
+      "inherits": "dev",
+      "cacheVariables": {
+        "FRAME_ENABLE_CUDA": "ON",
+        "FRAME_BUILD_EXAMPLES": "ON",
+        "CMAKE_CUDA_ARCHITECTURES": "native"
+      }
+    },
+    {
+      "name": "intel-gpu",
+      "displayName": "Intel GPU backend forced ON (icpx)",
+      "inherits": "dev",
+      "cacheVariables": {
+        "FRAME_ENABLE_INTEL_GPU": "ON",
+        "CMAKE_CXX_COMPILER": "icpx"
+      }
+    },
+    {
+      "name": "intel-npu",
+      "displayName": "Intel NPU backend forced ON (OpenVINO)",
+      "inherits": "dev",
+      "cacheVariables": {
+        "FRAME_ENABLE_INTEL_NPU": "ON"
+      }
+    },
+    {
+      "name": "ascend",
+      "displayName": "Ascend backend forced ON (CANN)",
+      "inherits": "dev",
+      "cacheVariables": {
+        "FRAME_ENABLE_ASCEND": "ON"
+      }
+    },
+    {
+      "name": "wheel",
+      "displayName": "Python wheel build (scikit-build-core)",
+      "inherits": "release",
+      "cacheVariables": {
+        "FRAME_BUILD_PYTHON": "ON",
+        "FRAME_BUILD_TESTS": "OFF",
+        "FRAME_BUILD_EXAMPLES": "OFF",
+        "FRAME_INSTALL_CPP": "OFF",
+        "FRAME_BUILD_TOOLS": "OFF"
+      }
+    },
+    {
+      "name": "bench",
+      "displayName": "Microbenchmarks (Release, FRAME_BUILD_BENCHMARKS=ON)",
+      "inherits": "release",
+      "cacheVariables": {
+        "FRAME_BUILD_BENCHMARKS": "ON"
+      }
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "dev",
+      "configurePreset": "dev"
+    },
+    {
+      "name": "dev-asan",
+      "configurePreset": "dev-asan"
+    },
+    {
+      "name": "release",
+      "configurePreset": "release"
+    },
+    {
+      "name": "cpu-only",
+      "configurePreset": "cpu-only"
+    },
+    {
+      "name": "cuda",
+      "configurePreset": "cuda"
+    },
+    {
+      "name": "intel-gpu",
+      "configurePreset": "intel-gpu"
+    },
+    {
+      "name": "intel-npu",
+      "configurePreset": "intel-npu"
+    },
+    {
+      "name": "ascend",
+      "configurePreset": "ascend"
+    },
+    {
+      "name": "wheel",
+      "configurePreset": "wheel"
+    },
+    {
+      "name": "bench",
+      "configurePreset": "bench"
+    }
+  ],
+  "testPresets": [
+    {
+      "name": "dev",
+      "configurePreset": "dev",
+      "output": {
+        "outputOnFailure": true
+      }
+    },
+    {
+      "name": "dev-asan",
+      "configurePreset": "dev-asan",
+      "output": {
+        "outputOnFailure": true
+      }
+    },
+    {
+      "name": "release",
+      "configurePreset": "release",
+      "output": {
+        "outputOnFailure": true
+      }
+    },
+    {
+      "name": "cpu-only",
+      "configurePreset": "cpu-only",
+      "output": {
+        "outputOnFailure": true
+      }
+    },
+    {
+      "name": "cuda",
+      "configurePreset": "cuda",
+      "output": {
+        "outputOnFailure": true
+      }
+    },
+    {
+      "name": "intel-gpu",
+      "configurePreset": "intel-gpu",
+      "output": {
+        "outputOnFailure": true
+      }
+    },
+    {
+      "name": "intel-npu",
+      "configurePreset": "intel-npu",
+      "output": {
+        "outputOnFailure": true
+      }
+    },
+    {
+      "name": "ascend",
+      "configurePreset": "ascend",
+      "output": {
+        "outputOnFailure": true
+      }
+    }
+  ]
+}

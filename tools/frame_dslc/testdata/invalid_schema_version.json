@@ -1,0 +1,50 @@
+{
+  "schema_version": 1,
+  "model": {
+    "name": "tiny_mlp",
+    "dtype": "float32",
+    "batch": 8
+  },
+  "inputs": [
+    {"name": "x", "shape": [8, 4]}
+  ],
+  "layers": [
+    {
+      "name": "fc1",
+      "kind": "linear",
+      "input": "x",
+      "weight_shape": [4, 8],
+      "bias_shape": [8, 8],
+      "activation": "relu"
+    },
+    {
+      "name": "fc2",
+      "kind": "linear",
+      "input": "fc1",
+      "weight_shape": [8, 1]
+    }
+  ],
+  "loss": {
+    "kind": "mse",
+    "prediction": "fc2",
+    "target_shape": [8, 1]
+  },
+  "optimizer": {
+    "kind": "sgd",
+    "learning_rate": 0.05
+  },
+  "training": {
+    "steps": 300,
+    "seed": 20260713,
+    "log_every": 50
+  },
+  "data": {
+    "x": {"kind": "uniform_seeded", "range": [-1.0, 1.0]},
+    "target": {"kind": "uniform_seeded", "range": [-1.0, 1.0]},
+    "params": {
+      "kind": "uniform_seeded",
+      "weight_range": [-0.1, 0.1],
+      "bias_range": [0.5, 1.0]
+    }
+  }
+}

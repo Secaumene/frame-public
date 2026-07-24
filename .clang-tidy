@@ -1,0 +1,32 @@
+# clang-tidy 配置。CheckOptions 命名映射与 docs/standards/cpp-coding.md 的 G6 命名规则
+# 一一对应(机械执法):类型/concept PascalCase;函数/变量 snake_case;私有成员 snake_case_;
+# 编译期常量 kPascalCase;宏 FRAME_ 前缀全大写;顶层命名空间 frame。
+Checks: >
+  bugprone-*,
+  performance-*,
+  modernize-*,
+  readability-*,
+  cppcoreguidelines-*,
+  misc-*,
+  google-*,
+  -modernize-use-trailing-return-type,
+  -readability-identifier-length,
+  -cppcoreguidelines-avoid-magic-numbers,
+  -readability-magic-numbers,
+  -cppcoreguidelines-pro-bounds-pointer-arithmetic
+# bugprone-* 与 performance-* 两族违规 = 构建失败,不容商量
+WarningsAsErrors: 'bugprone-*,performance-*'
+HeaderFilterRegex: '(^|/)(include/frame|src)/.*'  # 组件边界锚定:防 FetchContent 产物目录名(如 benchmark-src/)中的 src 子串误匹配,且不依赖调用目录(绝对/相对路径均正确)
+CheckOptions:
+  readability-identifier-naming.ClassCase: CamelCase
+  readability-identifier-naming.StructCase: CamelCase
+  readability-identifier-naming.ConceptCase: CamelCase
+  readability-identifier-naming.FunctionCase: lower_case
+  readability-identifier-naming.VariableCase: lower_case
+  readability-identifier-naming.PrivateMemberCase: lower_case
+  readability-identifier-naming.PrivateMemberSuffix: '_'
+  readability-identifier-naming.ConstexprVariablePrefix: 'k'
+  readability-identifier-naming.ConstexprVariableCase: CamelCase
+  readability-identifier-naming.MacroDefinitionCase: UPPER_CASE
+  readability-identifier-naming.MacroDefinitionPrefix: 'FRAME_'
+  readability-identifier-naming.NamespaceCase: lower_case

@@ -1,0 +1,52 @@
+# =============================================================================
+# Frame Python wheel 构建配置(scikit-build-core)
+#
+# 选型理由:scikit-build-core 原生对接 CMake、支持 cmake.args、可编辑安装、
+#   无 setuptools 胶水;是 pybind11 官方示例当前推荐路线。
+#
+# 许可证与官方纯源码发布边界由 ADR-0023 和 BUILD-050～052 裁决。
+# =============================================================================
+
+[build-system]
+requires = ["scikit-build-core>=0.10", "pybind11>=3.0"]
+build-backend = "scikit_build_core.build"
+
+[project]
+# 发布名沿用 frame-ml(import 名固定为 frame)；wheel 仅供本地构建验证，
+# Frame 官方不上传 wheel 或建立包索引(BUILD-050)。
+name = "frame-ml"
+version = "0.1.0"
+description = "Compiler-first deep learning framework (skeleton)"
+requires-python = ">=3.9"
+license = "GPL-3.0-or-later"
+license-files = ["LICENSE"]
+
+[project.urls]
+Homepage = "https://secaumene.github.io/frame/"
+Documentation = "https://secaumene.github.io/frame/"
+Source = "https://github.com/Secaumene/frame-public"
+
+[project.optional-dependencies]
+# 测试侧依赖(仅 tests/python/ 使用,不进 C++ 构建;非 find_package/FetchContent,
+# 不触发 REUSE-010,design-reviewer 已确认见 m12-design-brief)。onnx 为
+# ADR-0013 互操作实证依赖(pytest.importorskip,Apache-2.0,仅测试侧、同循
+# numpy 先例,见 docs/decisions/0013-onnx-weight-exchange-minimal-codec.md)。
+test = ["pytest", "numpy", "onnx"]
+
+[tool.scikit-build]
+minimum-version = "0.10"
+cmake.version = ">=3.24"
+# 与 CMakePresets.json 的 wheel preset 语义一致(scikit-build-core 不消费 preset,
+# 故此处显式重申五项开关)
+cmake.args = [
+  "-DFRAME_BUILD_PYTHON=ON",
+  "-DFRAME_BUILD_TESTS=OFF",
+  "-DFRAME_BUILD_EXAMPLES=OFF",
+  "-DFRAME_INSTALL_CPP=OFF",
+  "-DFRAME_BUILD_TOOLS=OFF",
+]
+wheel.packages = ["python/frame"]
+build-dir = "build/wheel-{wheel_tag}"
+
+[tool.pytest.ini_options]
+testpaths = ["tests/python"]

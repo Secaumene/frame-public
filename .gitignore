@@ -1,0 +1,25 @@
+# 构建产物
+build/
+install/
+*.o
+*.so
+*.a
+*.pyd
+
+# CMake 本地覆盖
+CMakeUserPresets.json
+
+# Python
+__pycache__/
+*.egg-info/
+dist/
+wheelhouse/
+.venv/
+.pytest_cache/
+python/frame/_core*.so
+
+# 工具缓存 / IDE
+.cache/
+.vscode/
+.idea/
+compile_commands.json

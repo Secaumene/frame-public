@@ -1,0 +1,33 @@
+# 持续集成入口。唯一职责:调用 scripts/ci_check.sh(检查逻辑的单一事实来源,
+# 与本地自检完全一致);本文件不承载任何检查规则。
+name: ci
+
+on:
+  # main 分支的每次推送触发
+  push:
+    branches: [main]
+  # 所有 pull request 触发
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      # 第一步:拉取仓库代码
+      - name: checkout
+        uses: actions/checkout@v5
+
+      # 第二步:安装固定版本 clang-format 与 clang-tidy(经 pipx 锁定版本;
+      # 本地开发者安装同版本的命令见 docs/standards/cpp-coding.md CPP-030)。
+      # 锁版本的原因:apt 的工具版本随 runner 镜像漂移,会与本地检查结果产生分歧;
+      # 固定版本保证 CI 与开发者本地(同版本)逐字一致。
+      # 安装失败即本 job 失败——CPP-030 要求两项检查在 CI 上真实执行,
+      # 若此处 continue-on-error,安装失败会让 ci_check.sh 打 SKIP、CI 假绿。
+      - name: install-clang-tools
+        run: |
+          pipx install clang-format==22.1.5
+          pipx install clang-tidy==22.1.7
+
+      # 第三步:运行统一检查脚本(语言策略、铁律机械检查、构建、测试全部汇总在内)
+      - name: ci-check
+        run: bash scripts/ci_check.sh

@@ -1,0 +1,86 @@
+%0 = graph_input() : float32[4,4]@cpu:0
+%1 = graph_input() : float32[4,4]@cpu:0
+%2 = graph_input() : float32[4,4]@cpu:0
+%3 = graph_input() : float32[4,4]@cpu:0
+%4 = graph_input() : float32[4,4]@cpu:0
+%5 = graph_input() : float32[4,4]@cpu:0
+%6 = graph_input() : float32[4,4]@cpu:0
+%7 = graph_input() : float32[4,4]@cpu:0
+%8 = graph_input() : float32[4,4]@cpu:0
+%9 = graph_input() : float32[4]@cpu:0
+%10 = graph_input() : float32[4]@cpu:0
+%11 = graph_input() : float32[4,6]@cpu:0
+%12 = graph_input() : float32[4,6]@cpu:0
+%13 = graph_input() : float32[6,4]@cpu:0
+%14 = graph_input() : float32[4,4]@cpu:0
+%15 = graph_input() : float32[4]@cpu:0
+%16 = graph_input() : float32[4]@cpu:0
+%17 = graph_input() : float32[4,1]@cpu:0
+%18 = graph_input() : float32[4,1]@cpu:0
+%19 = matmul(%0, %1) : float32[4,4]@cpu:0
+%20 = add(%19, %2) : float32[4,4]@cpu:0
+%21 = matmul(%0, %3) : float32[4,4]@cpu:0
+%22 = add(%21, %4) : float32[4,4]@cpu:0
+%23 = matmul(%0, %5) : float32[4,4]@cpu:0
+%24 = add(%23, %6) : float32[4,4]@cpu:0
+%25 = slice(%20) {axis=0, start=0, stop=2} : float32[2,4]@cpu:0
+%26 = slice(%22) {axis=0, start=0, stop=2} : float32[2,4]@cpu:0
+%27 = slice(%24) {axis=0, start=0, stop=2} : float32[2,4]@cpu:0
+%28 = slice(%25) {axis=1, start=0, stop=2} : float32[2,2]@cpu:0
+%29 = slice(%26) {axis=1, start=0, stop=2} : float32[2,2]@cpu:0
+%30 = slice(%27) {axis=1, start=0, stop=2} : float32[2,2]@cpu:0
+%31 = transpose(%29) {perm=[1, 0]} : float32[2,2]@cpu:0
+%32 = matmul(%28, %31) : float32[2,2]@cpu:0
+%33 = constant() {dtype=dtype(float32), shape=shape[2,2], value=[0.7071067811865475, 0.7071067811865475, 0.7071067811865475, 0.7071067811865475]} : float32[2,2]@cpu:0
+%34 = mul(%32, %33) : float32[2,2]@cpu:0
+%35 = softmax(%34) : float32[2,2]@cpu:0
+%36 = matmul(%35, %30) : float32[2,2]@cpu:0
+%37 = slice(%25) {axis=1, start=2, stop=4} : float32[2,2]@cpu:0
+%38 = slice(%26) {axis=1, start=2, stop=4} : float32[2,2]@cpu:0
+%39 = slice(%27) {axis=1, start=2, stop=4} : float32[2,2]@cpu:0
+%40 = transpose(%38) {perm=[1, 0]} : float32[2,2]@cpu:0
+%41 = matmul(%37, %40) : float32[2,2]@cpu:0
+%42 = constant() {dtype=dtype(float32), shape=shape[2,2], value=[0.7071067811865475, 0.7071067811865475, 0.7071067811865475, 0.7071067811865475]} : float32[2,2]@cpu:0
+%43 = mul(%41, %42) : float32[2,2]@cpu:0
+%44 = softmax(%43) : float32[2,2]@cpu:0
+%45 = matmul(%44, %39) : float32[2,2]@cpu:0
+%46 = concat(%36, %45) {axis=1} : float32[2,4]@cpu:0
+%47 = slice(%20) {axis=0, start=2, stop=4} : float32[2,4]@cpu:0
+%48 = slice(%22) {axis=0, start=2, stop=4} : float32[2,4]@cpu:0
+%49 = slice(%24) {axis=0, start=2, stop=4} : float32[2,4]@cpu:0
+%50 = slice(%47) {axis=1, start=0, stop=2} : float32[2,2]@cpu:0
+%51 = slice(%48) {axis=1, start=0, stop=2} : float32[2,2]@cpu:0
+%52 = slice(%49) {axis=1, start=0, stop=2} : float32[2,2]@cpu:0
+%53 = transpose(%51) {perm=[1, 0]} : float32[2,2]@cpu:0
+%54 = matmul(%50, %53) : float32[2,2]@cpu:0
+%55 = constant() {dtype=dtype(float32), shape=shape[2,2], value=[0.7071067811865475, 0.7071067811865475, 0.7071067811865475, 0.7071067811865475]} : float32[2,2]@cpu:0
+%56 = mul(%54, %55) : float32[2,2]@cpu:0
+%57 = softmax(%56) : float32[2,2]@cpu:0
+%58 = matmul(%57, %52) : float32[2,2]@cpu:0
+%59 = slice(%47) {axis=1, start=2, stop=4} : float32[2,2]@cpu:0
+%60 = slice(%48) {axis=1, start=2, stop=4} : float32[2,2]@cpu:0
+%61 = slice(%49) {axis=1, start=2, stop=4} : float32[2,2]@cpu:0
+%62 = transpose(%60) {perm=[1, 0]} : float32[2,2]@cpu:0
+%63 = matmul(%59, %62) : float32[2,2]@cpu:0
+%64 = constant() {dtype=dtype(float32), shape=shape[2,2], value=[0.7071067811865475, 0.7071067811865475, 0.7071067811865475, 0.7071067811865475]} : float32[2,2]@cpu:0
+%65 = mul(%63, %64) : float32[2,2]@cpu:0
+%66 = softmax(%65) : float32[2,2]@cpu:0
+%67 = matmul(%66, %61) : float32[2,2]@cpu:0
+%68 = concat(%58, %67) {axis=1} : float32[2,4]@cpu:0
+%69 = concat(%46, %68) {axis=0} : float32[4,4]@cpu:0
+%70 = matmul(%69, %7) : float32[4,4]@cpu:0
+%71 = add(%70, %8) : float32[4,4]@cpu:0
+%72 = add(%0, %71) : float32[4,4]@cpu:0
+%73 = layer_norm(%72, %9, %10) {eps=1e-05} : float32[4,4]@cpu:0
+%74 = matmul(%73, %11) : float32[4,6]@cpu:0
+%75 = add(%74, %12) : float32[4,6]@cpu:0
+%76 = relu(%75) : float32[4,6]@cpu:0
+%77 = matmul(%76, %13) : float32[4,4]@cpu:0
+%78 = add(%77, %14) : float32[4,4]@cpu:0
+%79 = add(%73, %78) : float32[4,4]@cpu:0
+%80 = layer_norm(%79, %15, %16) {eps=1e-05} : float32[4,4]@cpu:0
+%81 = matmul(%80, %17) : float32[4,1]@cpu:0
+%82 = add(%81, %18) : float32[4,1]@cpu:0
+%83 = graph_input() : float32[4,1]@cpu:0
+%84 = mse_loss(%82, %83) : float32[]@cpu:0
+graph_output(%84)

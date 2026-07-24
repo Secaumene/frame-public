@@ -1,0 +1,11 @@
+%0 = graph_input() : float32[8,4]@cpu:0
+%1 = graph_input() : float32[4,8]@cpu:0
+%2 = graph_input() : float32[8,8]@cpu:0
+%3 = graph_input() : float32[8,1]@cpu:0
+%4 = matmul(%0, %1) : float32[8,8]@cpu:0
+%5 = add(%4, %2) : float32[8,8]@cpu:0
+%6 = relu(%5) : float32[8,8]@cpu:0
+%7 = matmul(%6, %3) : float32[8,1]@cpu:0
+%8 = graph_input() : float32[8,1]@cpu:0
+%9 = mse_loss(%7, %8) : float32[]@cpu:0
+graph_output(%9)
