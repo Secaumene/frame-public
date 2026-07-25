@@ -2,13 +2,13 @@
 
 **适用版本：Frame v1.3 M28，C++20；Python 绑定 0.1.0（可选）**
 
-**最后更新：2026-07-24**
+**最后更新：2026-07-25**
 
 本章是非规范性使用说明；C++ 安装包导出以[构建与测试](../../docs/standards/build-and-test.md)为准。
 
 ## 学习目标
 
-在 Frame 仓库之外创建、配置、链接并运行第一个独立 C++ 项目。
+在 Frame 仓库之外创建、配置、链接并运行最短的独立 C++ 项目。
 
 ## 前置
 
@@ -19,14 +19,14 @@
 先在 Frame 仓库之外创建目录：
 
 ```bash
-mkdir -p "$HOME/frame-tutorial/frame-hello"
-cd "$HOME/frame-tutorial/frame-hello"
+mkdir -p "$HOME/frame-tutorial/frame-quickstart"
+cd "$HOME/frame-tutorial/frame-quickstart"
 ```
 
 然后创建两个文件：
 
 ```text
-frame-hello/
+frame-quickstart/
 ├── CMakeLists.txt
 └── main.cpp
 ```
@@ -35,83 +35,37 @@ frame-hello/
 
 ```cmake
 cmake_minimum_required(VERSION 3.24)
-project(frame_hello LANGUAGES CXX)
+project(frame_quickstart LANGUAGES CXX)
 
 find_package(frame CONFIG REQUIRED)
 
-add_executable(frame_hello main.cpp)
-target_compile_features(frame_hello PRIVATE cxx_std_20)
-target_link_libraries(frame_hello PRIVATE frame::frame)
+add_executable(frame_quickstart main.cpp)
+target_compile_features(frame_quickstart PRIVATE cxx_std_20)
+target_link_libraries(frame_quickstart PRIVATE frame::frame)
 ```
 
-`main.cpp` 复用 Tensor 基础示例的分配和读写模式：
+`main.cpp`：
 
 ```cpp
-#include <cstdint>
 #include <iostream>
 
-#include <frame/frame.h>
+#include <frame/core/shape.h>
 
-int main() {
-  // 经 CPU 后端取得运行期 Tensor 所需的 allocator。
-  const frame::Result<frame::hal::Backend*> backend_result =
-      frame::hal::BackendRegistry::instance().get(frame::kCpuBackendName);
-  if (!backend_result.is_ok()) {
-    std::cerr << "failed to get cpu backend: "
-              << backend_result.status().message() << "\n";
-    return 1;
-  }
-
-  frame::hal::Backend* backend = backend_result.value();
-  const frame::Device device = frame::cpu_device();
-  frame::hal::Allocator* allocator = backend->allocator(device);
-  if (allocator == nullptr) {
-    std::cerr << "failed to get cpu allocator\n";
-    return 1;
-  }
-
-  const frame::Result<frame::Tensor> tensor_result = frame::Tensor::empty(
-      frame::Shape({2, 3}), frame::DType::of<float>(), device, *allocator);
-  if (!tensor_result.is_ok()) {
-    std::cerr << "failed to allocate tensor: "
-              << tensor_result.status().message() << "\n";
-    return 1;
-  }
-
-  frame::Tensor tensor = tensor_result.value();
-  float* write_data = tensor.data<float>();
-  for (int64_t i = 0; i < tensor.numel(); ++i) {
-    write_data[i] = static_cast<float>(i) * 1.5F;
-  }
-
-  std::cout << "backend: " << device.backend << "\n";
-  std::cout << "shape: " << tensor.shape().to_string() << "\n";
-  std::cout << "dtype: " << tensor.dtype().name() << "\n";
-  std::cout << "data:";
-  const float* read_data = tensor.data<float>();
-  for (int64_t i = 0; i < tensor.numel(); ++i) {
-    std::cout << " " << read_data[i];
-  }
-  std::cout << "\n";
-  return 0;
-}
+int main() { std::cout << frame::Shape({2, 3}).numel() << '\n'; }
 ```
 
-在 `frame-hello/` 中配置、构建并运行：
+在 `frame-quickstart/` 中配置、构建并运行：
 
 ```bash
 CMAKE_PREFIX_PATH="$FRAME_PREFIX" cmake -S . -B build
 cmake --build build
-./build/frame_hello
+./build/frame_quickstart
 ```
 
 ## 预期输出
 
 ```text
-backend: cpu
-shape: [2, 3]
-dtype: float32
-data: 0 1.5 3 4.5 6 7.5
+6
 ```
 
 ## PyTorch 对照
@@ -119,16 +73,19 @@ data: 0 1.5 3 4.5 6 7.5
 ```python
 import torch
 
-tensor = torch.arange(6, dtype=torch.float32).reshape(2, 3) * 1.5
-print(tensor.shape, tensor.dtype, tensor.device, tensor.flatten().tolist())
+print(torch.Size([2, 3]).numel())
 ```
 
-这段 PyTorch 代码是 eager 计算；本例的 Frame `Tensor` 是经显式 allocator 分配的运行期缓冲。两者用于对照数据形状和数值，不代表 API 或执行模型等价。参考：[PyTorch tensor 文档](https://docs.pytorch.org/docs/stable/torch.html)。
+两边都只计算 shape 的元素数，不分配运行期 Tensor。参考：[PyTorch `torch.Size`](https://docs.pytorch.org/docs/stable/size.html)。
+
+## 继续运行 Tensor 示例
+
+[00_quickstart](../../examples/00_quickstart/main.cpp) 由 CTest 构建并运行，章内源码与它保持一致。需要完整的运行期 Tensor 分配、读写示例时，继续阅读[01_tensor_basics](../../examples/01_tensor_basics/main.cpp)。
 
 ## 边界
 
-- 本例不伪造 `zeros`、`ones` 或 Tensor 运算符；它只演示真实的 `Tensor::empty`、分配、写入与读取。
-- 所有 `Result` 与 allocator 都必须检查，后续图执行还会加入构图与编译边界。
+- 本例只验证安装包消费与 `Shape::numel()`；不创建或分配运行期 Tensor。
+- 章节中的项目由读者在仓外创建；仓内配套源码仅供学习和 CTest 覆盖，不是仓外工程的依赖。
 
 ## 小结
 
@@ -137,8 +94,8 @@ print(tensor.shape, tensor.dtype, tensor.device, tensor.flatten().tolist())
 
 ## 练习
 
-1. 在不移动 Frame 源码的前提下，把 `frame-hello` 放到另一目录并重新构建。
-2. 将 shape 改为 `{3, 2}`，并相应检查输出的 shape 与数据顺序。
+1. 在不移动 Frame 源码的前提下，把 `frame-quickstart` 放到另一目录并重新构建。
+2. 将 shape 改为 `{3, 2}`，确认输出仍为 `6`。
 
 ## 下一章
 

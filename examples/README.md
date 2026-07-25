@@ -7,6 +7,7 @@
 
 | 顺序 | 示例 | 学习重点 | 对应章节 |
 |---|---|---|---|
+| 00 | [最短 quickstart](00_quickstart/main.cpp) | 仓外安装包的 include、链接与首次运行 | [仓外 C++ 项目](../help/01-quickstart/README.md) |
 | 01 | [Tensor 基础](01_tensor_basics/main.cpp) | CPU Tensor 的分配、元数据与数据读写 | [仓外 C++ 项目](../help/01-quickstart/README.md) |
 | 02 | [图编译](02_graph_compile/main.cpp) | 建图、编译、整图执行与结果校验 | [核心概念](../help/02-core-concepts/README.md) |
 | 03 | [自定义算子](03_custom_op/main.cpp) | schema、kernel 注册与标准编译路径 | [新增算子](../help/09-add-operator/README.md) |
@@ -16,7 +17,7 @@
 
 ## 构建与运行
 
-`dev` preset 会构建六个示例：
+`dev` preset 会构建七个示例：
 
 ```sh
 cmake --preset dev

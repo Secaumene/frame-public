@@ -2,7 +2,7 @@
 
 **适用版本：Frame v1.3 M28，C++20；Python 绑定 0.1.0（可选）**
 
-**最后更新：2026-07-24**
+**最后更新：2026-07-25**
 
 本手册是非规范性使用说明；实现能力、安装契约与边界以 [docs/](../docs/README.md) 为准。
 
@@ -28,15 +28,15 @@ PyTorch 对照、边界、小结、练习和下一章。PyTorch 只作为教学�
 
 | 章节 | 配套源码 | 作用 |
 |---|---|---|
-| 01 | 章内完整仓外项目；[01_tensor_basics](../examples/01_tensor_basics/main.cpp) | 安装包消费与 CPU Tensor 基础。 |
+| 01 | [00_quickstart](../examples/00_quickstart/main.cpp)；[01_tensor_basics](../examples/01_tensor_basics/main.cpp) | 最短安装包消费；完整运行期 Tensor 分配与读写。 |
 | 02、06 | [02_graph_compile](../examples/02_graph_compile/main.cpp) | CPU/CUDA 静态图编译执行。 |
 | 04 | [04_nn_and_data](../examples/04_nn_and_data/main.cpp) | nn 构图与 CPU 批数据。 |
 | 05 | [05_training](../examples/05_training/main.cpp) | 前向、反向与 SGD 更新图。 |
 | 07 | [06_onnx_weights](../examples/06_onnx_weights/main.cpp) | ONNX initializer 权重交换。 |
 | 09 | [03_custom_op](../examples/03_custom_op/main.cpp) | 自定义算子注册与编译路径。 |
 
-第 01 章的项目必须由读者创建在 Frame 仓库之外；上表中的示例 01 只是同一
-公共 API 的仓内参考，不是仓外项目的源码依赖。
+第 01 章的项目必须由读者创建在 Frame 仓库之外；上表中的配套源码由 CTest
+构建运行，用于仓内学习与覆盖，仓外项目不依赖它们。
 
 ## 教程边界
 
